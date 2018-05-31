@@ -73,6 +73,8 @@ Filters.dashblock = function(pixels, threshold) {
       255 - newVal;
       **/
   }
+  let rowArray = blocks.map(r => r.reduce((a,b) => a+b))
+  $("#rows").text(rowArray.join(" | "))
   console.log(blocks);
   return pixels;
 };
