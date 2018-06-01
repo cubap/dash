@@ -1,2 +1,35 @@
-/* Styles go here */
 
+/* D3.js styles for charts */
+#rows,#columns {
+    display: block;
+    height:10rem;
+    width:100%;
+    position: relative;
+}
+#rows>div,#columns>div {
+    background: darkgrey;
+    flex-grow: 1;
+    height: 5%;
+}
+.flex {
+    display: flex !important;
+    align-items: stretch;
+    width: 100%;
+    position: relative;
+}
+#rOverlay, #cOverlay {
+    opacity: .3;
+    position: absolute;
+    top:0;
+    left:0;
+}
+#rOverlay>div {
+    background-color:blue;
+}
+
+#cOverlay>div {
+    background-color:orangered;
+}
+figure {
+    position: relative;
+}

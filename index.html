@@ -2,55 +2,63 @@
 <html>
 
 <head>
-  <script data-require="jquery@*" data-semver="2.1.3" src="https://code.jquery.com/jquery-2.1.3.min.js"></script>
-  <link data-require="bootstrap-css@*" data-semver="3.3.1" rel="stylesheet" href="//maxcdn.bootstrapcdn.com/bootstrap/3.3.1/css/bootstrap.min.css" />
-  <link rel="stylesheet" href="style.css" />
-  <script src="script.js"></script>
+    <script data-require="jquery@*" data-semver="2.1.3" src="https://code.jquery.com/jquery-2.1.3.min.js"></script>
+    <link data-require="bootstrap-css@*" data-semver="3.3.1" rel="stylesheet" href="//maxcdn.bootstrapcdn.com/bootstrap/3.3.1/css/bootstrap.min.css" />
+    <link rel="stylesheet" href="style.css" />
+    <script src="script.js"></script>
 </head>
 
 <body>
-  <div class="container">
-    <h1 class=text-primary>Canvas Images Lines</h1>
-    <div class="panel panel-primary">
-      <div class="panel-heading">
-        <h2 class=panel-title>Configure Image</h2>
-      </div>
-      <div class="panel-body">
-        <label>DataURL 
+    <div class="container">
+        <h1 class=text-primary>Canvas Images Lines</h1>
+        <div class="panel panel-primary">
+            <div class="panel-heading">
+                <h2 class=panel-title>Configure Image</h2>
+            </div>
+            <div class="panel-body">
+                <label>DataURL 
         <small>like <a href="http://dataurl.net/#dataurlmaker" target="_blank">made here</a></small>
         </label>
-        <textarea class=form-control onchange="updateURL(this.value)" ></textarea>
-      </div>
-      <div class=panel-footer>
-        <button class="btn btn-primary" onclick="grayscale()" id=buttongrayscale>Grayscale the image</button>
-        <button class="btn btn-primary" onclick="dashblock()" id=buttondashblock>Dashblock the image</button>
-        <select class="btn btn-primary" id=channel>
+                <textarea class=form-control onchange="updateURL(this.value)"></textarea>
+            </div>
+            <div class=panel-footer>
+                <button class="btn btn-primary" onclick="grayscale()" id=buttongrayscale>Grayscale the image</button>
+                <button class="btn btn-primary" onclick="dashblock()" id=buttondashblock>Dashblock the image</button>
+                <select class="btn btn-primary" id=channel>
         <option value=0>All</option>
         <option value=1>Red</option>
         <option value=2>Green</option>
         <option value=3>Blue</option>
         </select>
-        <select class="btn btn-primary" id=resolution>
+                <select class="btn btn-primary" id=resolution>
         <option value=1>precise</option>
         <option value=2>squinty</option>
         <option value=4>broad</option>
         <option value=7>extra quick</option>
         </select>
-        <button class="btn btn-warning pull-right" onclick="updateURL(null)">Use default</button>
-      </div>
+                <button class="btn btn-warning pull-right" onclick="updateURL(null)">Use default</button>
+            </div>
+        </div>
+        <div class="flex">
+          <div>
+            <h2>Image Here</h2>
+            <figure>
+              <div id="rOverlay"></div>
+              <div id="cOverlay"></div>
+              <img id="orig" src="" />
+                    <canvas id="image" style="display: none;"></canvas>
+                </figure>
+            </div>
+            <div>
+              <h2>rows</h2>
+              <div id="rows"></div>
+            </div>
+        </div>
+        <div>
+          <div id="columns" class="flex"></div>
+          <h3>columns</h3>
+        </div>
     </div>
-    <h2>Image Here</h2>
-    <figure class=pre-scrollable>
-      <img id="orig" src=""/>
-      <canvas id="image" style="display: none;"></canvas>
-    </figure>
-    <div>
-    <h3>rows</h3>
-    <div id="rows"></div> 
-    <h3>columns</h3>
-    <div id="columns"></div> 
-    </div>
-  </div>
 </body>
 
 </html>
