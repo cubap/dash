@@ -1,3 +1,12 @@
+const CONFIG = {
+  resolution: 1,
+  channel: 0,
+  overlay: true,
+  histograms: true,
+  textbox: true,
+  lines: false
+}
+
 Filters = {};
 Filters.getPixels = function (img) {
   var img = img || document.getElementById('orig');
@@ -23,9 +32,9 @@ Filters.filterImage = function (filter, image, var_args) {
 };
 
 Filters.dashblock = function (pixels, threshold) {
-  var resolution = parseInt(document.getElementById("resolution").value);; // in each direction: MUST be Integer > 0
+  var resolution = CONFIG.resolution = parseInt(document.getElementById("resolution").value); // in each direction: MUST be Integer > 0
   var width = pixels.width;
-  var channel = parseInt(document.getElementById("channel").value); // 0,1,2 RGB
+  var channel = CONFIG.channel = parseInt(document.getElementById("channel").value); // 0,1,2 RGB
   var d = pixels.data;
   var blocks = [];
   var r = resolution;
@@ -74,47 +83,68 @@ Filters.dashblock = function (pixels, threshold) {
       **/
   }
 
-  let filteredBlocks = blocks.filter(s => typeof s === "object" && !isNaN(s[0]))
-  let rowArray = filteredBlocks.map(r => r.reduce((a, b) => a + b))
-  // d3.select("#rows").selectAll("div").data(rowArray).enter().append("div")
-  // .style("height",function(d){d/Math.max(rowArray)+"%";}).attr("title",d).text(d)
+  if (CONFIG.lines || CONFIG.overlay || CONFIG.textbox) {
+    let filteredBlocks = blocks.filter(s => typeof s === "object" && !isNaN(s[0]))
+    let rowArray = filteredBlocks.map(r => r.reduce((a, b) => a + b))
+    // d3.select("#rows").selectAll("div").data(rowArray).enter().append("div")
+    // .style("height",function(d){d/Math.max(rowArray)+"%";}).attr("title",d).text(d)
 
-  let bars = $()
-  let bovs = $()
-  let maxW = rowArray.reduce((a, b) => Math.max(a, b))
-  let iW = $("#image").attr("width")
-  let iH = $("#image").attr("height")
-  rowArray.forEach(function (d) {
-    bars = bars.add($("<div>").attr("title", d).width(d / maxW * 100 + "%"))
-    bovs = bovs.add($("<div>").attr("title", d).css("opacity",d / maxW))
-  })
-  $("#rows").height(iH).empty().append(bars)
-  $("#rows").children().height(100 / bars.size() + "%")
-  $("#rOverlay").width(iW).height(iH).empty().append(bovs)
-  $("#rOverlay").children().height(100 / bovs.size() + "%").width(iW)
-
-  let columnArray = []
-  let b = filteredBlocks[0].length
-  while (--b > -1) {
-    filteredBlocks.forEach(function (arr) {
-      let v = arr[b]
-      columnArray[b] = columnArray[b] ? columnArray[b] + v : v
+    let bars = $()
+    let bovs = $()
+    let maxW = rowArray.reduce((a, b) => Math.max(a, b))
+    let iW = $("#image").attr("width")
+    let iH = $("#image").attr("height")
+    rowArray.forEach(function (d) {
+      bars = bars.add($("<div>").attr("title", d).width(d / maxW * 100 + "%"))
+      bovs = bovs.add($("<div>").attr("title", d).css("opacity", d / maxW))
     })
+    if (CONFIG.histograms) {
+      $("#rows").height(iH).empty().append(bars)
+      $("#rows").children().height(100 / bars.size() + "%")
+    }
+    if (CONFIG.overlay) {
+      $("#rOverlay").width(iW).height(iH).empty().append(bovs)
+      $("#rOverlay").children().height(100 / bovs.size() + "%").width(iW)
+    }
+    if (CONFIG.textbox) {
+
+    }
+    if (CONFIG.lines) {
+
+    }
+    let columnArray = []
+    let b = filteredBlocks[0].length
+    while (--b > -1) {
+      filteredBlocks.forEach(function (arr) {
+        let v = arr[b]
+        if (isNaN(v)) return
+        columnArray[b] = columnArray[b] ? columnArray[b] + v : v
+      })
+    }
+
+    let cols = $()
+    let covs = $()
+    let maxH = columnArray.reduce((a, b) => Math.max(a, b))
+    columnArray.forEach(function (d) {
+      cols = cols.add($("<div>").attr("title", d).height(d / maxH * 100 + "%"))
+      covs = covs.add($("<div>").attr("title", d).css("opacity", d / maxH))
+    })
+    if (CONFIG.histograms) {
+      $("#columns").width(iW).empty().append(cols)
+      $("#columns").children().width(100 / cols.size() + "%")
+    }
+    if (CONFIG.overlay) {
+      $("#cOverlay").width(iW).height(iH).empty().append(covs)
+      $("#cOverlay").children().width(100 / covs.size() + "%").height(iH)
+    }
+    if (CONFIG.textbox) {
+
+    }
+    if (CONFIG.lines) {
+
+    }
   }
-
-  let cols = $()
-  let covs = $()
-  let maxH = columnArray.reduce((a, b) => Math.max(a, b))
-  columnArray.forEach(function (d) {
-    cols = cols.add($("<div>").attr("title", d).height(d / maxH * 100 + "%"))
-    covs = covs.add($("<div>").attr("title", d).css("opacity",d / maxH))
-  })
-  $("#columns").width(iW).empty().append(cols)
-  $("#columns").children().width(100 / cols.size() + "%")
-  $("#cOverlay").width(iW).height(iH).empty().append(covs)
-  $("#cOverlay").children().width(100 / covs.size() + "%").height(iH)
-
-  console.log(blocks);
+  // console.log(blocks);
 
   return pixels;
 };

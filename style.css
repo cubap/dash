@@ -18,7 +18,7 @@
     position: relative;
 }
 #rOverlay, #cOverlay {
-    opacity: .3;
+    opacity: .75;
     position: absolute;
     top:0;
     left:0;
@@ -29,6 +29,7 @@
 
 #cOverlay>div {
     background-color:orangered;
+    float: left;
 }
 figure {
     position: relative;
