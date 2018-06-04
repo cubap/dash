@@ -4,7 +4,8 @@ const CONFIG = {
   overlay: true,
   histograms: true,
   textbox: true,
-  lines: false
+  lines: false,
+  threshold: 0.25 // % of max value
 }
 
 Filters = {};
@@ -66,52 +67,28 @@ Filters.dashblock = function (pixels, threshold) {
       }
     }
     /**prev row
-    d[i - 2 - aRow] = d[i - 3 - aRow] = d[i - 4 - aRow] =
-      d[i - aRow] = d[i + 1 - aRow] = d[i + 2 - aRow] =
-      d[i + 4 - aRow] = d[i + 5 - aRow] = d[i + 6 - aRow] =
-
-    //this row
-    d[i - 2] = d[i - 3] = d[i - 4] =
-      d[i] = d[i + 1] = d[i + 2] =
-      d[i + 4] = d[i + 5] = d[i + 6] =
-
-    //next row
-    d[i - 2 + aRow] = d[i - 3 + aRow] = d[i - 4 + aRow] =
-      d[i + aRow] = d[i + 1 + aRow] = d[i + 2 + aRow] =
-      d[i + 4 + aRow] = d[i + 5 + aRow] = d[i + 6 + aRow] =
-      255 - newVal;
-      **/
+     d[i - 2 - aRow] = d[i - 3 - aRow] = d[i - 4 - aRow] =
+     d[i - aRow] = d[i + 1 - aRow] = d[i + 2 - aRow] =
+     d[i + 4 - aRow] = d[i + 5 - aRow] = d[i + 6 - aRow] =
+     
+     //this row
+     d[i - 2] = d[i - 3] = d[i - 4] =
+     d[i] = d[i + 1] = d[i + 2] =
+     d[i + 4] = d[i + 5] = d[i + 6] =
+     
+     //next row
+     d[i - 2 + aRow] = d[i - 3 + aRow] = d[i - 4 + aRow] =
+     d[i + aRow] = d[i + 1 + aRow] = d[i + 2 + aRow] =
+     d[i + 4 + aRow] = d[i + 5 + aRow] = d[i + 6 + aRow] =
+     255 - newVal;
+     **/
   }
 
   if (CONFIG.lines || CONFIG.overlay || CONFIG.textbox) {
-    let filteredBlocks = blocks.filter(s => typeof s === "object" && !isNaN(s[0]))
-    let rowArray = filteredBlocks.map(r => r.reduce((a, b) => a + b))
-    // d3.select("#rows").selectAll("div").data(rowArray).enter().append("div")
-    // .style("height",function(d){d/Math.max(rowArray)+"%";}).attr("title",d).text(d)
-
-    let bars = $()
-    let bovs = $()
-    let maxW = rowArray.reduce((a, b) => Math.max(a, b))
     let iW = $("#image").attr("width")
     let iH = $("#image").attr("height")
-    rowArray.forEach(function (d) {
-      bars = bars.add($("<div>").attr("title", d).width(d / maxW * 100 + "%"))
-      bovs = bovs.add($("<div>").attr("title", d).css("opacity", d / maxW))
-    })
-    if (CONFIG.histograms) {
-      $("#rows").height(iH).empty().append(bars)
-      $("#rows").children().height(100 / bars.size() + "%")
-    }
-    if (CONFIG.overlay) {
-      $("#rOverlay").width(iW).height(iH).empty().append(bovs)
-      $("#rOverlay").children().height(100 / bovs.size() + "%").width(iW)
-    }
-    if (CONFIG.textbox) {
+    let filteredBlocks = blocks.filter(s => typeof s === "object" && !isNaN(s[0]))
 
-    }
-    if (CONFIG.lines) {
-
-    }
     let columnArray = []
     let b = filteredBlocks[0].length
     while (--b > -1) {
@@ -121,7 +98,6 @@ Filters.dashblock = function (pixels, threshold) {
         columnArray[b] = columnArray[b] ? columnArray[b] + v : v
       })
     }
-
     let cols = $()
     let covs = $()
     let maxH = columnArray.reduce((a, b) => Math.max(a, b))
@@ -138,11 +114,63 @@ Filters.dashblock = function (pixels, threshold) {
       $("#cOverlay").children().width(100 / covs.size() + "%").height(iH)
     }
     if (CONFIG.textbox) {
-
+      const COL_SUM = columnArray.reduce((previous, current) => current += previous)
+      const COL_AVG = COL_SUM / columnArray.length
+      const COL_MEDIAN = columnArray.concat().sort()[Math.floor(columnArray.length / 2)]
+      const COL_TH = Math.floor(columnArray.length * CONFIG.threshold)
+      $("#columns").children().each(function () {
+        if ($(this).height() > (COL_MEDIAN / maxH * 100)) {
+          $(this).css("background-color", "black")
+        }
+      })
+      $("#cOverlay").children().each(function () {
+        if ($(this).css("opacity") > (COL_MEDIAN / maxH)) {
+          $(this).css("background-color", "black")
+        }
+      })
+      // TODO: find columns
+      // TODO: rerun against just that range
+      // TODO: confirm row-like behavior and save
+      // TODO: render
     }
     if (CONFIG.lines) {
-
+      // TODO: count and avg lines
+      // TODO: render
     }
+
+    let rowArray = filteredBlocks.map(r => r.reduce((a, b) => a + b))
+    // d3.select("#rows").selectAll("div").data(rowArray).enter().append("div")
+    // .style("height",function(d){d/Math.max(rowArray)+"%";}).attr("title",d).text(d)
+    let bars = $()
+    let bovs = $()
+    let maxW = rowArray.reduce((a, b) => Math.max(a, b))
+    rowArray.forEach(function (d) {
+      bars = bars.add($("<div>").attr("title", d).width(d / maxW * 100 + "%"))
+      bovs = bovs.add($("<div>").attr("title", d).css("opacity", d / maxW))
+    })
+    if (CONFIG.histograms) {
+      $("#rows").height(iH).empty().append(bars)
+      $("#rows").children().height(100 / bars.size() + "%")
+    }
+    if (CONFIG.overlay) {
+      $("#rOverlay").width(iW).height(iH).empty().append(bovs)
+      $("#rOverlay").children().height(100 / bovs.size() + "%").width(iW)
+    }
+    if (CONFIG.textbox) {
+      const ROW_SUM = rowArray.reduce((previous, current) => current += previous)
+      const ROW_AVG = ROW_SUM / rowArray.length
+      $("#rows").children().each(function () {
+        if ($(this).width() > (ROW_AVG / maxW * 100)) {
+          $(this).css("background-color", "black")
+        }
+      })
+      $("#rOverlay").children().each(function () {
+        if ($(this).css("opacity") > (ROW_AVG / maxW)) {
+          $(this).css("background-color", "black")
+        }
+      })
+    }
+    if (CONFIG.lines) {}
   }
   // console.log(blocks);
 
