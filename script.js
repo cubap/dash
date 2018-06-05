@@ -5,7 +5,7 @@ const CONFIG = {
   histograms: true,
   textbox: true,
   lines: false,
-  threshold: 0.25 // % of max value
+  threshold: {column:0.1,row:0.25} // % of max value
 }
 
 Filters = {};
@@ -101,6 +101,13 @@ Filters.dashblock = function (pixels, threshold) {
     let cols = $()
     let covs = $()
     let maxH = columnArray.reduce((a, b) => Math.max(a, b))
+    let rowArray = filteredBlocks.map(r => r.reduce((a, b) => a + b))
+    // d3.select("#rows").selectAll("div").data(rowArray).enter().append("div")
+    // .style("height",function(d){d/Math.max(rowArray)+"%";}).attr("title",d).text(d)
+    let bars = $()
+    let bovs = $()
+    let maxW = rowArray.reduce((a, b) => Math.max(a, b))
+
     columnArray.forEach(function (d) {
       cols = cols.add($("<div>").attr("title", d).height(d / maxH * 100 + "%"))
       covs = covs.add($("<div>").attr("title", d).css("opacity", d / maxH))
@@ -117,14 +124,19 @@ Filters.dashblock = function (pixels, threshold) {
       const COL_SUM = columnArray.reduce((previous, current) => current += previous)
       const COL_AVG = COL_SUM / columnArray.length
       const COL_MEDIAN = columnArray.concat().sort()[Math.floor(columnArray.length / 2)]
-      const COL_TH = Math.floor(columnArray.length * CONFIG.threshold)
-      $("#columns").children().each(function () {
-        if ($(this).height() > (COL_MEDIAN / maxH * 100)) {
-          $(this).css("background-color", "black")
+      const COL_TH = Math.floor(maxH * CONFIG.threshold.column)
+      const ROW_TH = Math.floor(maxW * CONFIG.threshold.row)
+      $("#columns").children().each(function (index) {
+        if ($(this).height() > (COL_TH / maxH * 100)) {
+          columnArray[index].inCol = true
+          if(rowArray[index] > CONFIG.threshold.row * maxW){
+            rowArray[index].inCol = true
+            $(this).css("background-color", "black")
+          }
         }
       })
       $("#cOverlay").children().each(function () {
-        if ($(this).css("opacity") > (COL_MEDIAN / maxH)) {
+        if ($(this).css("opacity") > (COL_TH / maxH)) {
           $(this).css("background-color", "black")
         }
       })
@@ -138,12 +150,6 @@ Filters.dashblock = function (pixels, threshold) {
       // TODO: render
     }
 
-    let rowArray = filteredBlocks.map(r => r.reduce((a, b) => a + b))
-    // d3.select("#rows").selectAll("div").data(rowArray).enter().append("div")
-    // .style("height",function(d){d/Math.max(rowArray)+"%";}).attr("title",d).text(d)
-    let bars = $()
-    let bovs = $()
-    let maxW = rowArray.reduce((a, b) => Math.max(a, b))
     rowArray.forEach(function (d) {
       bars = bars.add($("<div>").attr("title", d).width(d / maxW * 100 + "%"))
       bovs = bovs.add($("<div>").attr("title", d).css("opacity", d / maxW))
@@ -159,9 +165,9 @@ Filters.dashblock = function (pixels, threshold) {
     if (CONFIG.textbox) {
       const ROW_SUM = rowArray.reduce((previous, current) => current += previous)
       const ROW_AVG = ROW_SUM / rowArray.length
-      $("#rows").children().each(function () {
+      $("#rows").children().each(function (index) {
         if ($(this).width() > (ROW_AVG / maxW * 100)) {
-          $(this).css("background-color", "black")
+          rowArray[index].inRow = true
         }
       })
       $("#rOverlay").children().each(function () {
