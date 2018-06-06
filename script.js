@@ -5,7 +5,17 @@ const CONFIG = {
   histograms: true,
   textbox: true,
   lines: false,
-  threshold: {column:0.1,row:0.25} // % of max value
+  threshold: {column:0.1,row:0.25}, // % of max value
+  detect: {
+    column: {
+      minimum: .05, // % of width
+      gapX: .01, // % of width to bridge
+      gapY: .05 // % of height to bridge
+    },
+    row: {
+      minimum: .01 // % of height
+    }
+  }
 }
 
 Filters = {};
@@ -126,13 +136,12 @@ Filters.dashblock = function (pixels, threshold) {
       const COL_MEDIAN = columnArray.concat().sort()[Math.floor(columnArray.length / 2)]
       const COL_TH = Math.floor(maxH * CONFIG.threshold.column)
       const ROW_TH = Math.floor(maxW * CONFIG.threshold.row)
+      let proposedColumnsX = [];
       $("#columns").children().each(function (index) {
         if ($(this).height() > (COL_TH / maxH * 100)) {
           columnArray[index].inCol = true
-          if(rowArray[index] > CONFIG.threshold.row * maxW){
-            rowArray[index].inCol = true
+          proposedColumnsX.push(index)
             $(this).css("background-color", "black")
-          }
         }
       })
       $("#cOverlay").children().each(function () {
@@ -140,6 +149,42 @@ Filters.dashblock = function (pixels, threshold) {
           $(this).css("background-color", "black")
         }
       })
+
+      // detect: {
+      //   column: {
+      //     minimum: .05, // % of width
+      //     gapX: .01, // % of width to bridge
+      //     gapY: .05 // % of height to bridge
+      //   },
+      //   row: {
+      //     minimum: .01 // % of height
+      //   }
+      // }
+      // assert columns on vertical data only
+      let clen = columnArray.length
+      let gapX = CONFIG.detect.column.gapX * clen
+      let gapY = CONFIG.detect.column.gapY * clen
+      let colMin = CONFIG.detect.column.minimum * clen
+      let rowMin = CONFIG.detect.row.minimum * filteredBlocks.length
+
+      let columns = [] // incoming [ {x,y,w,h} ]
+      while (proposedColumnsX.length) {
+        let colStart = proposedColumnsX.pop()
+        let test = colStart.valueOf()
+        let inCol = true
+        while (inCol && proposedColumnsX.length) {
+          let next = proposedColumnsX.pop()
+          if (test-next < gapX) {
+            test = next.valueOf()
+            continue
+          }
+          if (colStart-test > colMin) {
+            columns.unshift({x:test,y:undefined,w:colStart-test,h:undefined})
+          }
+          inCol = false
+        }
+      }
+      console.log(columns)
       // TODO: find columns
       // TODO: rerun against just that range
       // TODO: confirm row-like behavior and save
