@@ -184,8 +184,15 @@ Filters.dashblock = function (pixels, threshold) {
           inCol = false
         }
       }
+      
       console.log(columns)
-      // TODO: find columns
+
+      let rows = []
+      let theseColumns = columns.values()
+      while(!theseColumns.next().done) {
+
+        console.log(theseColumns.next())
+      }
       // TODO: rerun against just that range
       // TODO: confirm row-like behavior and save
       // TODO: render
