@@ -1,19 +1,24 @@
 const CONFIG = {
   resolution: 1,
   channel: 0,
-  overlay: true,
+  overlay: false,
   histograms: true,
   textbox: true,
-  lines: false,
-  threshold: {column:0.1,row:0.25}, // % of max value
+  lines: true,
+  threshold: {
+    column: 0.1,
+    row: 0.25
+  }, // % of max value
   detect: {
     column: {
       minimum: .05, // % of width
       gapX: .01, // % of width to bridge
-      gapY: .05 // % of height to bridge
+      gapY: .05, // % of height to bridge
+      minRows: 3 // minimum 
     },
     row: {
-      minimum: .01 // % of height
+      minimum: .001, // % of height
+      maximum: .1 // % of height
     }
   }
 }
@@ -110,13 +115,16 @@ Filters.dashblock = function (pixels, threshold) {
     }
     let cols = $()
     let covs = $()
-    let maxH = columnArray.reduce((a, b) => Math.max(a, b))
-    let rowArray = filteredBlocks.map(r => r.reduce((a, b) => a + b))
+    let maxH = columnArray.max()
+    let rowArray = filteredBlocks.sumRows()
     // d3.select("#rows").selectAll("div").data(rowArray).enter().append("div")
     // .style("height",function(d){d/Math.max(rowArray)+"%";}).attr("title",d).text(d)
     let bars = $()
     let bovs = $()
-    let maxW = rowArray.reduce((a, b) => Math.max(a, b))
+    let maxW = rowArray.max()
+
+    let lines = []
+    let stripes = [] // incoming [ {x,y,w,h} ]
 
     columnArray.forEach(function (d) {
       cols = cols.add($("<div>").attr("title", d).height(d / maxH * 100 + "%"))
@@ -141,7 +149,7 @@ Filters.dashblock = function (pixels, threshold) {
         if ($(this).height() > (COL_TH / maxH * 100)) {
           columnArray[index].inCol = true
           proposedColumnsX.push(index)
-            $(this).css("background-color", "black")
+          $(this).css("background-color", "black")
         }
       })
       $("#cOverlay").children().each(function () {
@@ -165,39 +173,98 @@ Filters.dashblock = function (pixels, threshold) {
       let gapX = CONFIG.detect.column.gapX * clen
       let gapY = CONFIG.detect.column.gapY * clen
       let colMin = CONFIG.detect.column.minimum * clen
-      let rowMin = CONFIG.detect.row.minimum * filteredBlocks.length
-
-      let columns = [] // incoming [ {x,y,w,h} ]
+      let rowMin = CONFIG.detect.row.minimum * iH
+      let rowMax = CONFIG.detect.row.maximum * iH
       while (proposedColumnsX.length) {
         let colStart = proposedColumnsX.pop()
         let test = colStart.valueOf()
         let inCol = true
         while (inCol && proposedColumnsX.length) {
           let next = proposedColumnsX.pop()
-          if (test-next < gapX) {
+          if (test - next < gapX) {
             test = next.valueOf()
             continue
           }
-          if (colStart-test > colMin) {
-            columns.unshift({x:test,y:undefined,w:colStart-test,h:undefined})
+          if (colStart - test > colMin) {
+            stripes.unshift({
+              x: test,
+              y: undefined,
+              w: colStart - test,
+              h: undefined
+            })
           }
           inCol = false
         }
       }
-      
-      console.log(columns)
 
-      let rows = []
-      let theseColumns = columns.values()
-      while(!theseColumns.next().done) {
+      console.log(stripes)
+      let proposedRowsY = [];
 
-        console.log(theseColumns.next())
-      }
-      // TODO: rerun against just that range
+      stripes.forEach(function (c, index) {
+        let theseRows = []
+        let rArray = filteredBlocks.sumRows(c.x, c.x + c.w)
+        while (rArray.length) {
+          let test = rArray.pop()
+          if (test < ROW_TH) {
+            continue
+          }
+          let rowStart = rArray.length + 1
+          let inRow = true
+          while (inRow && rArray.length) {
+            let next = rArray.pop()
+            if (next < ROW_TH) {
+              inRow = false
+              // end row
+              let rSize = rowStart - rArray.length
+              if (rSize < rowMax && rSize > rowMin) {
+                // write row
+                let y = rArray.length + 1
+                let h = rowStart - y
+                theseRows.push({
+                  x: c.x,
+                  y: y,
+                  w: c.w,
+                  h: h
+                })
+              }
+            }
+          }
+        }
+        // TODO: Divide by gapY to break into several columns
+        if (theseRows.length > CONFIG.detect.column.minRows) {
+          lines.push(theseRows)
+        }
+      })
+      lines.forEach(function (line,index) {
+        let last = line[line.length-1]
+        let css = {
+          left: last.x / iW * 2 * 100 + "%",
+          top: last.y / iH * 2 * 100 + "%",
+          width: last.w / iW * 2 * 100 + "%",
+          height: (line[0].y+line[0].h-last.y) / iH * 2 * 100 + "%",
+          border: "2px solid lime",
+          background: "transparent",
+          position: "absolute"
+        }
+        $("#cOverlay").width(iW).height(iH).append($("<div>").attr("title", String.fromCharCode(index+65)).css(css))
+      })
       // TODO: confirm row-like behavior and save
       // TODO: render
     }
     if (CONFIG.lines) {
+      lines.forEach(function (line,index) {
+        line.forEach(function(ln,ind){
+          let css = { 
+            left: ln.x / iW * 2 * 100 + "%", // TODO: *2 based on resolution
+            top: ln.y / iH * 2 * 100 + "%",
+            width: ln.w / iW * 2 * 100 + "%",
+            height: ln.h / iH * 2 * 100 + "%",
+            border: "thin solid orange",
+            position: "absolute"
+          }
+          $("#cOverlay").width(iW).height(iH).append($("<div>").attr("title", String.fromCharCode(index+65)).css(css))
+        })
+      })
       // TODO: count and avg lines
       // TODO: render
     }
@@ -234,6 +301,13 @@ Filters.dashblock = function (pixels, threshold) {
 
   return pixels;
 };
+
+Array.prototype.sumRows = function (columnStart = 0, columnEnd = this.length) {
+  return this.map(r => r.slice(columnStart, columnEnd).reduce((a, b) => a + b))
+}
+Array.prototype.max = function () {
+  return Math.max(...this)
+}
 
 Filters.grayscale = function (pixels, args) {
   var d = pixels.data;
