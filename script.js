@@ -13,7 +13,7 @@ const CONFIG = {
     column: {
       minimum: .05, // % of width
       gapX: .01, // % of width to bridge
-      gapY: .05, // % of height to bridge
+      gapY: .001, // % of height to bridge
       minRows: 3 // minimum 
     },
     row: {
@@ -24,12 +24,13 @@ const CONFIG = {
 }
 
 Filters = {};
+Dash = {rotate:[]}
 Filters.getPixels = function (img) {
   var img = img || document.getElementById('orig');
   var c = this.getCanvas(img.naturalWidth, img.naturalHeight);
   var ctx = c.getContext('2d');
   ctx.drawImage(img, 0, 0);
-  return ctx.getImageData(0, 0, c.width, c.height);
+  return (Filters.rotated) ? Filters.rotate(Filters.rotated) : ctx.getImageData(0, 0, c.width, c.height);
 };
 
 Filters.getCanvas = function (w, h) {
@@ -46,6 +47,30 @@ Filters.filterImage = function (filter, image, var_args) {
   }
   return filter.apply(null, args);
 };
+
+Filters.rotate = function(degrees,canvas=document.getElementById("image"),img=document.getElementById("orig")){
+  let ctx = canvas.getContext('2d')
+  canvas.width=img.width
+  canvas.height=img.height
+  ctx.save()
+  ctx.translate(canvas.width/2,canvas.height/2)
+  ctx.rotate(degrees * Math.PI/180)
+  ctx.drawImage(img, -canvas.width/2, -canvas.height/2)
+  ctx.restore()
+  // $(img).hide()
+  // $(canvas).show()
+  Filters.rotated = degrees
+  return ctx.getImageData(0, 0, canvas.width, canvas.height)
+}
+
+function rotato(start, end, interval){
+  while (start < end) {
+    Filters.rotated = start
+    runFilter('dashblock', Filters.dashblock)
+    start+=interval
+  }
+  return console.log(Dash.rotate)
+}
 
 Filters.dashblock = function (pixels, threshold) {
   var resolution = CONFIG.resolution = parseInt(document.getElementById("resolution").value); // in each direction: MUST be Integer > 0
@@ -235,6 +260,11 @@ Filters.dashblock = function (pixels, threshold) {
           lines.push(theseRows)
         }
       })
+      Dash.rotate[Filters.rotated||0] = {
+        maxColumnWidth:lines.map(line => line.max("w")).max(),
+        rowCount:Math.max(lines.map(l => l.length)),
+        rowAvgHeight:lines.map(line => line.avg("h")).max()
+      }
       lines.forEach(function (line,index) {
         let last = line[line.length-1]
         let css = {
@@ -305,8 +335,27 @@ Filters.dashblock = function (pixels, threshold) {
 Array.prototype.sumRows = function (columnStart = 0, columnEnd = this.length) {
   return this.map(r => r.slice(columnStart, columnEnd).reduce((a, b) => a + b))
 }
-Array.prototype.max = function () {
+Array.prototype.max = function (prop) {
+  if(prop){
+    let max;
+    try {
+      this.forEach(function(e){
+        if(e[prop]>max) max = e[prop]
+        else if(max===undefined && !isNaN(e[prop])) max = e[prop]
+      })
+    } catch (err) {
+      throw new Error("Property not found.",err)
+    }
+    return max
+  }
   return Math.max(...this)
+}
+Array.prototype.avg = function(prop){
+  if(prop){
+    let flist = this.filter(x=>!isNaN(x[prop]))
+    return flist.reduce((a,b) => a + b[prop], 0) / flist.length
+  }
+  return this.reduce((a,b) => a + b, 0) / this.length
 }
 
 Filters.grayscale = function (pixels, args) {
