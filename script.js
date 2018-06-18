@@ -18,13 +18,16 @@ const CONFIG = {
     },
     row: {
       minimum: .001, // % of height
-      maximum: .1 // % of height
+      maximum: .1, // % of height
+      merge: false // abut rows within columns
     }
   }
 }
 
 Filters = {};
-Dash = {rotate:[]}
+Dash = {
+  rotate: []
+}
 Filters.getPixels = function (img) {
   var img = img || document.getElementById('orig');
   var c = this.getCanvas(img.naturalWidth, img.naturalHeight);
@@ -48,28 +51,38 @@ Filters.filterImage = function (filter, image, var_args) {
   return filter.apply(null, args);
 };
 
-Filters.rotate = function(degrees,canvas=document.getElementById("image"),img=document.getElementById("orig")){
+Filters.rotate = function (degrees, canvas = document.getElementById("image"), img = document.getElementById("orig")) {
   let ctx = canvas.getContext('2d')
-  canvas.width=img.width
-  canvas.height=img.height
+  canvas.width = img.width
+  canvas.height = img.height
   ctx.save()
-  ctx.translate(canvas.width/2,canvas.height/2)
-  ctx.rotate(degrees * Math.PI/180)
-  ctx.drawImage(img, -canvas.width/2, -canvas.height/2)
+  ctx.translate(canvas.width / 2, canvas.height / 2)
+  ctx.rotate(degrees * Math.PI / 180)
+  ctx.drawImage(img, -canvas.width / 2, -canvas.height / 2)
   ctx.restore()
   // $(img).hide()
   // $(canvas).show()
   Filters.rotated = degrees
+  $("#orig").css("transform", "rotate(" + (degrees || 0) + "deg)")
   return ctx.getImageData(0, 0, canvas.width, canvas.height)
 }
 
-function rotato(start, end, interval){
+function rotato(start, end, interval) {
   while (start < end) {
     Filters.rotated = start
     runFilter('dashblock', Filters.dashblock)
-    start+=interval
+    start += interval
   }
   return console.log(Dash.rotate)
+}
+
+function loadImage(event, form) {
+  event.preventDefault()
+  let reader = new FileReader()
+  reader.onload = function () {
+    $("#dataurl").val(reader.result).change()
+  }
+  reader.readAsDataURL(event.target.files[0])
 }
 
 Filters.dashblock = function (pixels, threshold) {
@@ -106,22 +119,6 @@ Filters.dashblock = function (pixels, threshold) {
         d[i + row * aRow + col * 4] = d[i + row * aRow + col * 4 + 1] = d[i + row * aRow + col * 4 + 2] = 255 - newVal;
       }
     }
-    /**prev row
-     d[i - 2 - aRow] = d[i - 3 - aRow] = d[i - 4 - aRow] =
-     d[i - aRow] = d[i + 1 - aRow] = d[i + 2 - aRow] =
-     d[i + 4 - aRow] = d[i + 5 - aRow] = d[i + 6 - aRow] =
-     
-     //this row
-     d[i - 2] = d[i - 3] = d[i - 4] =
-     d[i] = d[i + 1] = d[i + 2] =
-     d[i + 4] = d[i + 5] = d[i + 6] =
-     
-     //next row
-     d[i - 2 + aRow] = d[i - 3 + aRow] = d[i - 4 + aRow] =
-     d[i + aRow] = d[i + 1 + aRow] = d[i + 2 + aRow] =
-     d[i + 4 + aRow] = d[i + 5 + aRow] = d[i + 6 + aRow] =
-     255 - newVal;
-     **/
   }
 
   if (CONFIG.lines || CONFIG.overlay || CONFIG.textbox) {
@@ -155,12 +152,15 @@ Filters.dashblock = function (pixels, threshold) {
       cols = cols.add($("<div>").attr("title", d).height(d / maxH * 100 + "%"))
       covs = covs.add($("<div>").attr("title", d).css("opacity", d / maxH))
     })
+    if (CONFIG.histograms || CONFIG.overlay || CONFIG.textbox || CONFIG.lines) {
+      $("#columns, #cOverlay, #rOverlay, #rows").empty()
+    }
     if (CONFIG.histograms) {
-      $("#columns").width(iW).empty().append(cols)
+      $("#columns").width(iW).append(cols)
       $("#columns").children().width(100 / cols.size() + "%")
     }
     if (CONFIG.overlay) {
-      $("#cOverlay").width(iW).height(iH).empty().append(covs)
+      $("#cOverlay").width(iW).height(iH).append(covs)
       $("#cOverlay").children().width(100 / covs.size() + "%").height(iH)
     }
     if (CONFIG.textbox) {
@@ -260,39 +260,40 @@ Filters.dashblock = function (pixels, threshold) {
           lines.push(theseRows)
         }
       })
-      Dash.rotate[Filters.rotated||0] = {
-        maxColumnWidth:lines.map(line => line.max("w")).max(),
-        rowCount:Math.max(lines.map(l => l.length)),
-        rowAvgHeight:lines.map(line => line.avg("h")).max()
+      Dash.rotate[Filters.rotated || 0] = {
+        maxColumnWidth: lines.map(line => line.max("w")).max(),
+        rowCount: lines.map(l => l.length).max(),
+        rowAvgHeight: lines.map(line => line.avg("h")).max(),
+        rowSigma: lines.map(line => line.sigma("h")).max()
       }
-      lines.forEach(function (line,index) {
-        let last = line[line.length-1]
+      lines.forEach(function (line, index) {
+        let last = line[line.length - 1]
         let css = {
-          left: last.x / iW * 2 * 100 + "%",
-          top: last.y / iH * 2 * 100 + "%",
-          width: last.w / iW * 2 * 100 + "%",
-          height: (line[0].y+line[0].h-last.y) / iH * 2 * 100 + "%",
+          left: last.x / iW * 2 * CONFIG.resolution * 100 + "%",
+          top: last.y / iH * 2 * CONFIG.resolution * 100 + "%",
+          width: last.w / iW * 2 * CONFIG.resolution * 100 + "%",
+          height: (line[0].y + line[0].h - last.y) / iH * 2 * CONFIG.resolution * 100 + "%",
           border: "2px solid lime",
           background: "transparent",
           position: "absolute"
         }
-        $("#cOverlay").width(iW).height(iH).append($("<div>").attr("title", String.fromCharCode(index+65)).css(css))
+        $("#cOverlay").width(iW).height(iH).append($("<div>").attr("title", String.fromCharCode(index + 65)).css(css))
       })
       // TODO: confirm row-like behavior and save
       // TODO: render
     }
     if (CONFIG.lines) {
-      lines.forEach(function (line,index) {
-        line.forEach(function(ln,ind){
-          let css = { 
-            left: ln.x / iW * 2 * 100 + "%", // TODO: *2 based on resolution
-            top: ln.y / iH * 2 * 100 + "%",
-            width: ln.w / iW * 2 * 100 + "%",
-            height: ln.h / iH * 2 * 100 + "%",
+      lines.forEach(function (line, index) {
+        line.forEach(function (ln, ind) {
+          let css = {
+            left: ln.x / iW * 2 * CONFIG.resolution * 100 + "%",
+            top: ln.y / iH * 2 * CONFIG.resolution * 100 + "%",
+            width: ln.w / iW * 2 * CONFIG.resolution * 100 + "%",
+            height: ln.h / iH * 2 * CONFIG.resolution * 100 + "%",
             border: "thin solid orange",
             position: "absolute"
           }
-          $("#cOverlay").width(iW).height(iH).append($("<div>").attr("title", String.fromCharCode(index+65)).css(css))
+          $("#cOverlay").width(iW).height(iH).append($("<div>").attr("title", String.fromCharCode(index + 65)).css(css))
         })
       })
       // TODO: count and avg lines
@@ -304,11 +305,11 @@ Filters.dashblock = function (pixels, threshold) {
       bovs = bovs.add($("<div>").attr("title", d).css("opacity", d / maxW))
     })
     if (CONFIG.histograms) {
-      $("#rows").height(iH).empty().append(bars)
+      $("#rows").height(iH).append(bars)
       $("#rows").children().height(100 / bars.size() + "%")
     }
     if (CONFIG.overlay) {
-      $("#rOverlay").width(iW).height(iH).empty().append(bovs)
+      $("#rOverlay").width(iW).height(iH).append(bovs)
       $("#rOverlay").children().height(100 / bovs.size() + "%").width(iW)
     }
     if (CONFIG.textbox) {
@@ -336,26 +337,33 @@ Array.prototype.sumRows = function (columnStart = 0, columnEnd = this.length) {
   return this.map(r => r.slice(columnStart, columnEnd).reduce((a, b) => a + b))
 }
 Array.prototype.max = function (prop) {
-  if(prop){
+  if (prop) {
     let max;
     try {
-      this.forEach(function(e){
-        if(e[prop]>max) max = e[prop]
-        else if(max===undefined && !isNaN(e[prop])) max = e[prop]
+      this.forEach(function (e) {
+        if (e[prop] > max) max = e[prop]
+        else if (max === undefined && !isNaN(e[prop])) max = e[prop]
       })
     } catch (err) {
-      throw new Error("Property not found.",err)
+      throw new Error("Property not found.", err)
     }
     return max
   }
   return Math.max(...this)
 }
-Array.prototype.avg = function(prop){
-  if(prop){
-    let flist = this.filter(x=>!isNaN(x[prop]))
-    return flist.reduce((a,b) => a + b[prop], 0) / flist.length
+Array.prototype.avg = function (prop) {
+  if (prop) {
+    let flist = this.filter(x => !isNaN(x[prop]))
+    return flist.reduce((a, b) => a + b[prop], 0) / flist.length
   }
-  return this.reduce((a,b) => a + b, 0) / this.length
+  return this.reduce((a, b) => a + b, 0) / this.length
+}
+Array.prototype.sigma = function (prop) {
+  let mean = this.avg(prop)
+  if (prop) {
+    return Math.sqrt(this.map(e => Math.pow((e[prop] - mean), 2)).avg())
+  }
+  return Math.sqrt(this.map(e => Math.pow((e - mean), 2)).avg())
 }
 
 Filters.grayscale = function (pixels, args) {
