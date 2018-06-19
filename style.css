@@ -1,37 +1,45 @@
-
 /* D3.js styles for charts */
-#rows,#columns {
+
+#rows,
+#columns {
     display: block;
-    height:10rem;
-    width:100%;
+    height: 10rem;
+    width: 100%;
     position: relative;
 }
-#rows>div,#columns>div {
+
+#rows>div,
+#columns>div {
     background: darkgrey;
     flex-grow: 1;
     height: 5%;
 }
+
 .flex {
     display: flex !important;
     align-items: stretch;
     width: 100%;
     position: relative;
 }
-#rOverlay, #cOverlay {
+
+#rOverlay,
+#cOverlay {
     opacity: .75;
     position: absolute;
-    top:0;
-    left:0;
+    top: 0;
+    left: 0;
     z-index: 5;
 }
+
 #rOverlay>div {
-    background-color:blue;
+    background-color: blue;
 }
 
 #cOverlay>div {
-    background-color:orangered;
+    background-color: orangered;
     float: left;
 }
+
 figure {
     position: relative;
 }
