@@ -11,14 +11,14 @@ const CONFIG = {
     }, // % of max value
     detect: {
         column: {
-            minimum: .05, // % of width
-            gapX: .01, // % of width to bridge
-            gapY: .001, // % of height to bridge
+            minimum: 0.05, // % of width
+            gapX: 0.01, // % of width to bridge
+            gapY: 0.001, // % of height to bridge
             minRows: 3 // minimum 
         },
         row: {
-            minimum: .001, // % of height
-            maximum: .1, // % of height
+            minimum: 0.001, // % of height
+            maximum: 0.1, // % of height
             merge: false // abut rows within columns
         }
     }
@@ -28,8 +28,7 @@ Filters = {};
 Dash = {
     rotate: []
 }
-Filters.getPixels = function(img) {
-    var img = img || document.getElementById('orig');
+Filters.getPixels = function(img=document.getElementById('orig')) {
     var c = this.getCanvas(img.naturalWidth, img.naturalHeight);
     var ctx = c.getContext('2d');
     ctx.drawImage(img, 0, 0);
