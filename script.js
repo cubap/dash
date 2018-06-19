@@ -71,9 +71,27 @@ function rotato(start, end, interval) {
   while (start < end) {
     Filters.rotated = start
     runFilter('dashblock', Filters.dashblock)
-    start += interval
+    start += interval/2
   }
   return console.log(Dash.rotate)
+}
+
+Dash.align = function(start=-3,end=3,interval=1, limit=0.125){
+  let lowest = {}
+  while (interval>=limit) {
+    rotato(start, end, interval)
+    Object.keys(Dash.rotate).forEach(function(k){
+      if(lowest.rowSigma && lowest.rowSigma<Dash.rotate[k].rowSigma){
+        return
+      }
+      lowest = Dash.rotate[k]
+      lowest.rotation = k
+    })
+    start = Number(lowest.rotation)-interval
+    end = Number(lowest.rotation)+interval
+    interval /=2
+  }
+  alert(lowest.rotation+" degrees seems to be the thing.")
 }
 
 function loadImage(event, form) {
@@ -264,7 +282,7 @@ Filters.dashblock = function (pixels, threshold) {
         maxColumnWidth: lines.map(line => line.max("w")).max(),
         rowCount: lines.map(l => l.length).max(),
         rowAvgHeight: lines.map(line => line.avg("h")).max(),
-        rowSigma: lines.map(line => line.sigma("h")).max()
+        rowSigma: lines.map(line => line.σ("h")).max()
       }
       lines.forEach(function (line, index) {
         let last = line[line.length - 1]
@@ -358,7 +376,7 @@ Array.prototype.avg = function (prop) {
   }
   return this.reduce((a, b) => a + b, 0) / this.length
 }
-Array.prototype.sigma = function (prop) {
+Array.prototype.σ = function (prop) {
   let mean = this.avg(prop)
   if (prop) {
     return Math.sqrt(this.map(e => Math.pow((e[prop] - mean), 2)).avg())
