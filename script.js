@@ -82,7 +82,7 @@ Dash.align = function (start = -3, end = 3, interval = 1, limit = 0.125) {
   while (interval >= limit) {
     rotato(start, end, interval)
     Object.keys(Dash.rotate).forEach(function (k) {
-      if (lowest.rowSigma && lowest.rowSigma != -Infinity && lowest.rowSigma < Dash.rotate[k].rowSigma) {
+      if (lowest.rowSigma && lowest.rowSigma < Dash.rotate[k].rowSigma || (Dash.rotate[k].rowSigma === -Infinity)) {
         return
       }
       lowest = Dash.rotate[k]
