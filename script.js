@@ -229,19 +229,19 @@ Filters.dashblock = function (pixels, threshold) {
           }
           inCol = false
         }
-        // if (inCol) {
-        //    TODO: grab column that fell off the end of the page
-        // }
-        if(stripes.length===0) {
-          // the whole page is one column
-          stripes = [{
-            x: 0,
-            y: undefined,
-            w: iW,
-            h: undefined
-        }]
-        }
       }
+          // if (inCol) {
+          //    TODO: grab column that fell off the end of the page
+          // }
+          if(stripes.length===0) {
+            // the whole page is one column
+            stripes = [{
+              x: 0,
+              y: undefined,
+              w: iW,
+              h: undefined
+          }]
+          }
 
       console.log(stripes)
       let proposedRowsY = [];
