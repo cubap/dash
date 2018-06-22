@@ -202,16 +202,6 @@ Filters.dashblock = function (pixels, threshold) {
         }
       })
 
-      // detect: {
-      //   column: {
-      //     minimum: .05, // % of width
-      //     gapX: .01, // % of width to bridge
-      //     gapY: .05 // % of height to bridge
-      //   },
-      //   row: {
-      //     minimum: .01 // % of height
-      //   }
-      // }
       // assert columns on vertical data only
       let clen = columnArray.length
       let gapX = CONFIG.detect.column.gapX * clen
@@ -238,6 +228,15 @@ Filters.dashblock = function (pixels, threshold) {
             })
           }
           inCol = false
+        }
+        if(stripes.length===0) {
+          // the whole page is one column
+          stripes = [{
+            x: 0,
+            y: undefined,
+            w: iW,
+            h: undefined
+        }]
         }
       }
 
